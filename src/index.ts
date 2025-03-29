@@ -11,6 +11,12 @@
  * Learn more at https://developers.cloudflare.com/workers/
  */
 
+export interface Env {
+	// If you set another name in the Wrangler config file as the value for 'binding',
+	// replace "AI" with the variable name you defined.
+	AI: Ai;
+  }
+
 export default {
 	async fetch(request, env, ctx): Promise<Response> {
 		const url = new URL(request.url);
@@ -19,6 +25,19 @@ export default {
 				return new Response('Hello, World!');
 			case '/random':
 				return new Response(crypto.randomUUID());
+			case '/image/':
+				const imageUrl = url.searchParams.get("imageUrl");
+				if (imageUrl !== null){
+				const imageResponse = await fetch(imageUrl);
+    			const blob = await imageResponse.arrayBuffer();
+
+    			const inputs = {
+      				image: [...new Uint8Array(blob)],
+    			};
+
+    			const response = await env.AI.run('@cf/microsoft/resnet-50', inputs);
+    			return Response.json({ inputs: { image: [] }, response });
+			}
 			default:
 				return new Response('Not Found', { status: 404 });
 		}
